@@ -251,14 +251,14 @@ namespace TILER2 {
         }
 
         #region Console Commands
-#if DEBUG
+/*#if DEBUG
         [ConCommand(commandName = "NCFG_scramble")]
         public static void ConCmdNCFGScramble(ConCommandArgs args) {
             var rng = new Xoroshiro128Plus(0);
             AutoItemConfig.instances.ForEach(x => {
-                /*if(x.configEntry.Description.AcceptableValues is AcceptableValueList) {
+                if(x.configEntry.Description.AcceptableValues is AcceptableValueList) {
 
-                } else if(x.configEntry.Description.AcceptableValues is AcceptableValueRange)*/
+                } else if(x.configEntry.Description.AcceptableValues is AcceptableValueRange)
                 var av = x.configEntry.Description.AcceptableValues;
                 if(x.propType == typeof(bool))
                     x.UpdateProperty(rng.nextBool);
@@ -279,7 +279,7 @@ namespace TILER2 {
                 }
             });
         }
-#endif
+#endif*/
 
         const string NCFG_GET_WRONG_ARGS_PRE = "ConCmd ncfg_get was used with bad arguments (";
         const string NCFG_GET_USAGE_POST = ").\nUsage: ncfg_get \"path1\" \"optional path2\" \"optional path3\". Path matches mod name, config category, and config name, in that order.";

@@ -24,7 +24,7 @@ namespace TILER2 {
             lockIcon = LegacyResourcesAPI.Load<Sprite>("Textures/MiscIcons/texUnlockIcon");
             On.RoR2.UI.LogBook.LogBookController.BuildPickupEntries += On_LogbookBuildPickupEntries;
             On.RoR2.Run.BuildDropTable += On_RunBuildDropTable;
-            On.RoR2.PickupPickerController.GetOptionsFromPickupIndex += PickupPickerController_GetOptionsFromPickupIndex;
+            On.RoR2.PickupPickerController.GetOptionsFromPickupState += PickupPickerController_GetOptionsFromPickupState;
             On.RoR2.UI.LogBook.LogBookController.CanSelectItemEntry += LogBookController_CanSelectItemEntry;
             On.RoR2.UI.LogBook.LogBookController.CanSelectEquipmentEntry += LogBookController_CanSelectEquipmentEntry;
             On.RoR2.RuleDef.FromItem += RuleDef_FromItem;
@@ -147,8 +147,8 @@ namespace TILER2 {
             return retv;
         }
 
-        private PickupPickerController.Option[] PickupPickerController_GetOptionsFromPickupIndex(On.RoR2.PickupPickerController.orig_GetOptionsFromPickupIndex orig, PickupIndex pickupIndex) {
-            var origv = orig(pickupIndex);
+        private PickupPickerController.Option[] PickupPickerController_GetOptionsFromPickupState(On.RoR2.PickupPickerController.orig_GetOptionsFromPickupState orig, UniquePickup pickupState) {
+            var origv = orig(pickupState);
             var remv = new HashSet<PickupIndex>();
             foreach(CatalogBoilerplate bpl in allInstances) {
                 if((bpl is Item || bpl is Equipment) && !bpl.enabled && bpl.pickupIndex != PickupIndex.none) remv.Add(bpl.pickupIndex);

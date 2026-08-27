@@ -1,4 +1,5 @@
-﻿using Mono.Cecil.Cil;
+﻿using BepInEx.Logging;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
@@ -11,12 +12,13 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
+
 namespace TILER2 {
-	/// <summary>
-	/// Keeps track of temporary items. Temporary items cannot be spent at 3D Printers or Scrappers, nor removed by itemsteal; they are intended for removal by mod code only.
-	/// Must be attached alongside a normal Inventory. Use GiveItem/RemoveItem/GetItemCount to work with temporary items; use GetRealItemCount to get non-temporary items in the sibling Inventory.
-	/// </summary>
-	[RequireComponent(typeof(Inventory))]
+    /// <summary>
+    /// Keeps track of temporary items. Temporary items cannot be spent at 3D Printers or Scrappers, nor removed by itemsteal; they are intended for removal by mod code only.
+    /// Must be attached alongside a normal Inventory. Use GiveItem/RemoveItem/GetItemCount to work with temporary items; use GetRealItemCount to get non-temporary items in the sibling Inventory.
+    /// </summary>
+    [RequireComponent(typeof(Inventory))]
 	public class FakeInventory : NetworkBehaviour {
 		internal class FakeInventoryModule : T2Module<FakeInventoryModule> {
 			public override void SetupConfig() {
@@ -28,17 +30,16 @@ namespace TILER2 {
 
 				//Ignore fake items in:
 				On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.IsAffordable += LunarItemOrEquipmentCostTypeHelper_IsAffordable;
-				On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.PayCost += LunarItemOrEquipmentCostTypeHelper_PayCost;
-				On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.PayOne += LunarItemOrEquipmentCostTypeHelper_PayOne;
+
 				On.RoR2.Inventory.HasAtLeastXTotalItemsOfTier += Inventory_HasAtLeastXTotalItemsOfTier;
 				On.RoR2.Inventory.GetTotalItemCountOfTier += Inventory_GetTotalItemCountOfTier;
 				On.RoR2.ItemStealController.StolenInventoryInfo.StealItem += StolenInventoryInfo_StealItem;
 				On.RoR2.RunReport.Generate += RunReport_Generate;
-				On.RoR2.ScrapperController.BeginScrapping += ScrapperController_BeginScrapping;
+
 				On.RoR2.ShrineCleanseBehavior.CleanseInventoryServer += ShrineCleanseBehavior_CleanseInventoryServer;
 				On.RoR2.ShrineCleanseBehavior.InventoryIsCleansable += ShrineCleanseBehavior_InventoryIsCleansable;
 				On.RoR2.Util.GetItemCountForTeam += Util_GetItemCountForTeam;
-				IL.RoR2.PickupPickerController.SetOptionsFromInteractor += PickupPickerController_SetOptionsFromInteractor;
+				IL.RoR2.PickupPickerController.GetGeneratedOptionsFromInteractor += PickupPickerController_GetGeneratedOptionsFromInteractor;
                 On.RoR2.Items.ContagiousItemManager.StepInventoryInfection += ContagiousItemManager_StepInventoryInfection;
                 On.RoR2.Items.ContagiousItemManager.OnInventoryChangedGlobal += ContagiousItemManager_OnInventoryChangedGlobal;
                 On.RoR2.Items.SuppressedItemManager.OnInventoryChangedGlobal += SuppressedItemManager_OnInventoryChangedGlobal;
@@ -49,7 +50,7 @@ namespace TILER2 {
                 On.RoR2.ItemStealController.StolenInventoryInfo.TakeItemFromLendee += StolenInventoryInfo_TakeItemFromLendee;
                 On.RoR2.ItemStealController.StolenInventoryInfo.TakeBackItemsFromLendee += StolenInventoryInfo_TakeBackItemsFromLendee;
                 On.RoR2.LunarSunBehavior.FixedUpdate += LunarSunBehavior_FixedUpdate;
-				On.RoR2.CostTypeDef.PayCost += On_CostTypeDef_PayCost;
+
                 On.RoR2.CostTypeDef.IsAffordable += CostTypeDef_IsAffordable;
 
 				//Stack checker
@@ -67,9 +68,10 @@ namespace TILER2 {
 
 		private static Dictionary<Inventory, FakeInventory> instancesByInventory = new();
 		public static ReadOnlyDictionary<Inventory, FakeInventory> readOnlyInstancesByInventory = new(instancesByInventory);
-		
-		///<summary>Items in this HashSet cannot be added to nor removed from a FakeInventory.</summary>
-		public static HashSet<ItemDef> blacklist = new();
+        internal static ManualLogSource _logger;
+
+        ///<summary>Items in this HashSet cannot be added to nor removed from a FakeInventory.</summary>
+        public static HashSet<ItemDef> blacklist = new();
 
 		public FakeInventory() {
 			itemStacks = new ReadOnlyCollection<int>(_itemStacks);
@@ -116,7 +118,7 @@ namespace TILER2 {
 		}
 
 		public int GetRealItemCount(ItemIndex ind) {
-			return HG.ArrayUtils.GetSafe(inventory.itemStacks, (int)ind);
+			return HG.ArrayUtils.GetSafe(_itemStacks, (int)ind);
 		}
 
 		public int GetAdjustedItemCount(ItemIndex ind) {
@@ -248,29 +250,26 @@ namespace TILER2 {
 			ignoreFakes--;
 		}
 
-		private static void PickupPickerController_SetOptionsFromInteractor(ILContext il) {
-			var c = new ILCursor(il);
+		private static void PickupPickerController_GetGeneratedOptionsFromInteractor(ILContext il) {
+          
+            var c = new ILCursor(il);
 			int locIndex = -1;
 			c.GotoNext(MoveType.After,
 				x => x.MatchLdloc(out locIndex),
-				x => x.MatchLdfld<ItemDef>("canRemove"));
+                x => x.MatchLdfld(out var displayClassField) && displayClassField.Name == "itemDef",
+                x => x.MatchLdfld<ItemDef>("canRemove"));
 			c.Emit(OpCodes.Ldarg_1);
 			c.Emit(OpCodes.Ldloc_S, (byte)locIndex);
 			c.EmitDelegate<Func<bool,Interactor,ItemDef,bool>>((origDoContinue, iac, def) => {
 				var retv = origDoContinue;
 				ignoreFakes++;
-				if(iac.GetComponent<CharacterBody>().inventory.GetItemCount(def.itemIndex) <= 0) retv = false;
+				if(iac.GetComponent<CharacterBody>().inventory.GetItemCountPermanent(def.itemIndex) <= 0) retv = false;
 				ignoreFakes--;
 				return retv;
 			});
 		}
 
-		private static CostTypeDef.PayCostResults On_CostTypeDef_PayCost(On.RoR2.CostTypeDef.orig_PayCost orig, CostTypeDef self, int cost, Interactor activator, GameObject purchasedObject, Xoroshiro128Plus rng, ItemIndex avoidedItemIndex) {
-			ignoreFakes++;
-			var retv = orig(self, cost, activator, purchasedObject, rng, avoidedItemIndex);
-			ignoreFakes--;
-			return retv;
-		}
+
 
 		private static bool CostTypeDef_IsAffordable(On.RoR2.CostTypeDef.orig_IsAffordable orig, CostTypeDef self, int cost, Interactor activator) {
 			ignoreFakes++;
@@ -300,11 +299,7 @@ namespace TILER2 {
 			return retv;
 		}
 
-		private static void ScrapperController_BeginScrapping(On.RoR2.ScrapperController.orig_BeginScrapping orig, ScrapperController self, int intPickupIndex) {
-			ignoreFakes++;
-			orig(self, intPickupIndex);
-			ignoreFakes--;
-		}
+
 
 		private static RunReport RunReport_Generate(On.RoR2.RunReport.orig_Generate orig, Run run, GameEndingDef gameEnding) {
 			ignoreFakes++;
@@ -334,17 +329,7 @@ namespace TILER2 {
 			return retv;
 		}
 
-		private static void LunarItemOrEquipmentCostTypeHelper_PayOne(On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.orig_PayOne orig, Inventory inventory) {
-			ignoreFakes++;
-			orig(inventory);
-			ignoreFakes--;
-		}
 
-		private static void LunarItemOrEquipmentCostTypeHelper_PayCost(On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.orig_PayCost orig, CostTypeDef costTypeDef, CostTypeDef.PayCostContext context) {
-			ignoreFakes++;
-			orig(costTypeDef, context);
-			ignoreFakes--;
-		}
 
 		private static bool LunarItemOrEquipmentCostTypeHelper_IsAffordable(On.RoR2.CostTypeCatalog.LunarItemOrEquipmentCostTypeHelper.orig_IsAffordable orig, CostTypeDef costTypeDef, CostTypeDef.IsAffordableContext context) {
 			ignoreFakes++;
