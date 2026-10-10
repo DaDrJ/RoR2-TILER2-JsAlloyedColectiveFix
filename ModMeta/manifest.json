@@ -5,7 +5,7 @@
   "description": "ThinkInvisible's TILER2 Library, just that im tryna fix it back up.",
   "dependencies": [
     "bbepis-BepInExPack-5.4.2103",
-    "RiskofThunder-R2API_Core-5.3.5",
+    "RiskofThunder-R2API_Core-5.3.0",
     "RiskofThunder-R2API_Items-1.0.8",
     "RiskofThunder-R2API_Language-1.1.0",
     "RiskofThunder-R2API_Networking-1.0.4",
