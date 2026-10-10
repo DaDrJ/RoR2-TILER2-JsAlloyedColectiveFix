@@ -1,10 +1,12 @@
 ﻿using BepInEx.Configuration;
+using MonoMod.RuntimeDetour;
 using R2API;
 using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 using UnityEngine.Networking;
 using static TILER2.MiscUtil;
 
@@ -35,8 +37,8 @@ namespace TILER2 {
                 module.rng = new Xoroshiro128Plus(rngGenerator.nextUlong);
         }
 
-        private static void Language_SetCurrentLanguage(On.RoR2.Language.orig_SetCurrentLanguage orig, string newCurrentLanguageName) {
-            orig(newCurrentLanguageName);
+        private static void Language_SetCurrentLanguage(On.RoR2.Language.orig_SetCurrentLanguage orig, string newCurrentLanguageName, bool forceUnloadCurrentLanguage) {
+            orig(newCurrentLanguageName,false);
             foreach(var module in allModules) {
                 module.RefreshPermanentLanguage();
                 if(module.enabled) {

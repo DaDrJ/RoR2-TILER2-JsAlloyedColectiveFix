@@ -1,14 +1,14 @@
 {
   "name": "TILER2nt",
-  "version_number": "0.0.1",
-  "website_url": "https://github.com/ThinkInvis/RoR2-TILER2",
+  "version_number": "7.4.5",
+  "website_url": "https://github.com/DaDrJ/RoR2-TILER2-JsAlloyedColectiveFix",
   "description": "ThinkInvisible's TILER2 Library, just that im tryna fix it back up.",
   "dependencies": [
     "bbepis-BepInExPack-5.4.2103",
-    "RiskofThunder-R2API_Core-5.1.5",
-    "RiskofThunder-R2API_Items-1.0.4",
-    "RiskofThunder-R2API_Language-1.0.1",
-    "RiskofThunder-R2API_Networking-1.0.3",
-    "RiskofThunder-R2API_Prefab-1.0.4"
+    "RiskofThunder-R2API_Core-5.3.5",
+    "RiskofThunder-R2API_Items-1.0.8",
+    "RiskofThunder-R2API_Language-1.1.0",
+    "RiskofThunder-R2API_Networking-1.0.4",
+    "RiskofThunder-R2API_Prefab-1.1.1"
   ]
 }

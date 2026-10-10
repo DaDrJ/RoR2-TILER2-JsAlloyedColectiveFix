@@ -4,13 +4,12 @@
 
 ### Use of a mod manager is STRONGLY RECOMMENDED.
 
-Seriously, use a mod manager.
+## Reporting Bugs
 
-If the versions of TILER2 (or possibly any other mods) are different between your game and other players' in multiplayer, things WILL break. If TILER2 is causing kicks for "unspecified reason", it's likely due to a mod version mismatch. Ensure that all players in a server, including the host and/or dedicated server, are using the same mod versions before reporting a bug.
-
-**While reporting a bug, make sure to post a console log** (`path/to/RoR2/BepInEx/LogOutput.log`) from a run of the game where the bug happened; this often provides important information about why the bug is happening. If the bug is multiplayer-only, please try to include logs from both server and client.
+You'll find me on the Ror2 modding discord as @wichisfun or just Blåhaj, feel free to ping or dm me about bugs, ill try my best to fix 'em.
 
 ## Description
+
 
 TILER2 is a library mod. It won't do much on its own, but it may be required for some other mods.
 
@@ -43,38 +42,3 @@ NetConfig also adds the console commands `ncfg_get`, `ncfg_set`, `ncfg_settemp`,
 
 - Items which players have but were disabled mid-run need a UI indicator for such.
 - If a client gets kicked by R2API mod mismatch, NetConfig will attempt to kick them again (to no effect) due to timeout.
-- See the GitHub repo for more!
-
-## Changelog
-
-The 5 latest updates are listed below. For a full changelog, see: https://github.com/ThinkInvis/RoR2-TILER2/blob/master/changelog.md
-
-**7.4.3**
-
-- Recompiled, remapped signatures, and updated dependencies for recent vanilla updates.
-- Some backend improvements:
-	- Suppressed a harmless (but very annoying) warning on a dependency.
-	- Made BepInEx dependency version static.
-	- Postbuild event can now create the Build folder and project name subfolder if missing (e.g. on a new clone of the repo).
-
-**7.4.2**
-
-- Greatly improved performance of ItemWard and FakeInventory by introducing component caching.
-
-**7.4.1**
-
-- Fixes for Seekers of the Storm:
-	- Partially fixed FakeInventory item count display text tweak not working. The new method may cause overlapping text.
-	- Prevented an ItemWard prefab waking up during startup (causes errors now).
-	- Updated dependencies for new patch.
-	- Retargeted changed hook signatures (fixes errors preventing mod load, and notably language token failures).
-- Fixed a NullReferenceException while adding node occupation info to spawned objects.
-- Implemented some C#9 features made available by SotS.
-
-**7.4.0**
-
-- Added the CatalogUtil static module, containing `TryGetItemDef` and `TryGetEquipmentDef` methods.
-
-**7.3.5**
-
-- All stock CatalogBoilerplate implementations (Item, Equipment, Artifact) now add an automatic readonly config entry displaying the relevant content's name token and internal name.

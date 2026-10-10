@@ -41,7 +41,7 @@ namespace TILER2 {
             }
             if(globalLanguageDirty) {
                 globalLanguageDirty = false;
-                Language.SetCurrentLanguage(Language.currentLanguageName);
+                RoR2.Language.SetCurrentLanguage(Language.currentLanguageName,false);
             }
         }
 

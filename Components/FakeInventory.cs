@@ -1,6 +1,7 @@
 ﻿using BepInEx.Logging;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.RuntimeDetour.HookGen;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
@@ -19,8 +20,10 @@ namespace TILER2 {
     /// Must be attached alongside a normal Inventory. Use GiveItem/RemoveItem/GetItemCount to work with temporary items; use GetRealItemCount to get non-temporary items in the sibling Inventory.
     /// </summary>
     [RequireComponent(typeof(Inventory))]
-	public class FakeInventory : NetworkBehaviour {
-		internal class FakeInventoryModule : T2Module<FakeInventoryModule> {
+	public class FakeInventory : NetworkBehaviour
+    {
+		
+        internal class FakeInventoryModule : T2Module<FakeInventoryModule> {
 			public override void SetupConfig() {
 				base.SetupConfig();
 				R2API.Networking.NetworkingAPI.RegisterMessageType<MsgSyncAll>();
@@ -34,12 +37,13 @@ namespace TILER2 {
 				On.RoR2.Inventory.HasAtLeastXTotalItemsOfTier += Inventory_HasAtLeastXTotalItemsOfTier;
 				On.RoR2.Inventory.GetTotalItemCountOfTier += Inventory_GetTotalItemCountOfTier;
 				On.RoR2.ItemStealController.StolenInventoryInfo.StealItem += StolenInventoryInfo_StealItem;
+				
 				On.RoR2.RunReport.Generate += RunReport_Generate;
 
 				On.RoR2.ShrineCleanseBehavior.CleanseInventoryServer += ShrineCleanseBehavior_CleanseInventoryServer;
 				On.RoR2.ShrineCleanseBehavior.InventoryIsCleansable += ShrineCleanseBehavior_InventoryIsCleansable;
 				On.RoR2.Util.GetItemCountForTeam += Util_GetItemCountForTeam;
-				IL.RoR2.PickupPickerController.GetGeneratedOptionsFromInteractor += PickupPickerController_GetGeneratedOptionsFromInteractor;
+				IL.RoR2.PickupPickerController.GetGeneratedOptionsFromInteractor += PickupPickerController_GetGeneratedOptionsFromInteractor;//defining this is not needed tecnically, since in the function i use my own hook, but im too scared to change any of that so its here to stay;-;
                 On.RoR2.Items.ContagiousItemManager.StepInventoryInfection += ContagiousItemManager_StepInventoryInfection;
                 On.RoR2.Items.ContagiousItemManager.OnInventoryChangedGlobal += ContagiousItemManager_OnInventoryChangedGlobal;
                 On.RoR2.Items.SuppressedItemManager.OnInventoryChangedGlobal += SuppressedItemManager_OnInventoryChangedGlobal;
@@ -59,14 +63,16 @@ namespace TILER2 {
 				//Display hooks
 				On.RoR2.UI.ItemInventoryDisplay.UpdateDisplay += On_IIDUpdateDisplay;
 				On.RoR2.UI.ItemInventoryDisplay.OnInventoryChanged += On_IIDInventoryChanged;
-			}
+                
+            }
         }
+		
 
 		private int[] _itemStacks = ItemCatalog.RequestItemStackArray();
 		public readonly ReadOnlyCollection<int> itemStacks;
 		public Inventory inventory { get; private set; }
-
-		private static Dictionary<Inventory, FakeInventory> instancesByInventory = new();
+        public Type itsprivate => typeof(RoR2.ItemStealController).GetNestedType("StolenItemInfo", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+        private static Dictionary<Inventory, FakeInventory> instancesByInventory = new();
 		public static ReadOnlyDictionary<Inventory, FakeInventory> readOnlyInstancesByInventory = new(instancesByInventory);
         internal static ManualLogSource _logger;
 
@@ -224,8 +230,8 @@ namespace TILER2 {
 				ignoreFakes = 0;
 			}
 		}
-
-		private static void StolenInventoryInfo_TakeBackItemsFromLendee(On.RoR2.ItemStealController.StolenInventoryInfo.orig_TakeBackItemsFromLendee orig, RoR2.ItemStealController.StolenInventoryInfo self) {
+        
+        private static void StolenInventoryInfo_TakeBackItemsFromLendee(On.RoR2.ItemStealController.StolenInventoryInfo.orig_TakeBackItemsFromLendee orig,ItemStealController.StolenInventoryInfo self) {
 			ignoreFakes++;
 			orig(self);
 			ignoreFakes--;
@@ -236,8 +242,8 @@ namespace TILER2 {
 			orig(self);
 			ignoreFakes--;
 		}
-
-		private static int StolenInventoryInfo_TakeItemFromLendee(On.RoR2.ItemStealController.StolenInventoryInfo.orig_TakeItemFromLendee orig, RoR2.ItemStealController.StolenInventoryInfo self, ItemIndex itemIndex, int maxStackToTake) {
+       
+        private static int StolenInventoryInfo_TakeItemFromLendee(On.RoR2.ItemStealController.StolenInventoryInfo.orig_TakeItemFromLendee orig,	ItemStealController.StolenInventoryInfo self, ItemIndex itemIndex, int maxStackToTake) {
 			ignoreFakes++;
 			var retv = orig(self, itemIndex, maxStackToTake);
 			ignoreFakes--;
@@ -251,22 +257,25 @@ namespace TILER2 {
 		}
 
 		private static void PickupPickerController_GetGeneratedOptionsFromInteractor(ILContext il) {
-          
-            var c = new ILCursor(il);
-			int locIndex = -1;
-			c.GotoNext(MoveType.After,
-				x => x.MatchLdloc(out locIndex),
-                x => x.MatchLdfld(out var displayClassField) && displayClassField.Name == "itemDef",
-                x => x.MatchLdfld<ItemDef>("canRemove"));
-			c.Emit(OpCodes.Ldarg_1);
-			c.Emit(OpCodes.Ldloc_S, (byte)locIndex);
-			c.EmitDelegate<Func<bool,Interactor,ItemDef,bool>>((origDoContinue, iac, def) => {
-				var retv = origDoContinue;
-				ignoreFakes++;
-				if(iac.GetComponent<CharacterBody>().inventory.GetItemCountPermanent(def.itemIndex) <= 0) retv = false;
-				ignoreFakes--;
-				return retv;
+            var thatfunctionthatihate = typeof(RoR2.PickupPickerController).GetMethod("<GetGeneratedOptionsFromInteractor>g__IsItemValidAsAnOption|84_0", BindingFlags.NonPublic | BindingFlags.Instance);//if someonne gets why the name of this function is so weird, please lmk cause wtf is this suposed to even be. I feel like this is a crude fix at best 
+            var manip = new ILContext.Manipulator((il) => {
+                var c = new ILCursor(il);
+				Debug.Log(il);
+				c.GotoNext(MoveType.After,
+                    x => x.MatchLdarg(2),
+                    //x => x.MatchLdfld(out var displayClassField) && displayClassField.Name == "itemDef",
+                    x => x.MatchLdfld<ItemDef>("canRemove"));
+				c.Emit(OpCodes.Ldarg_1);
+				c.Emit(OpCodes.Ldarg_2);//yk on second though i kinda get why this was done. this is a lot simpler :P
+				c.EmitDelegate<Func<bool, Interactor, ItemDef, bool>>((origDoContinue, iac, def) => {
+					var retv = origDoContinue;
+					ignoreFakes++;
+					if(iac.GetComponent<CharacterBody>().inventory.GetItemCountPermanent(def.itemIndex) <= 0) retv = false;
+					ignoreFakes--;
+					return retv;
+				});
 			});
+			HookEndpointManager.Modify(thatfunctionthatihate, manip);
 		}
 
 
