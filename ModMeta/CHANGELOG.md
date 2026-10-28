@@ -1,6 +1,8 @@
 ## Changelog
 
 ## Changelog
+**7.4.6**
+- Fixed the fixed IL hook cause i overlooked a few needed variables
 
 **7.4.5**
 - Patched the IL hooks to match the new hollowed concepts dlc

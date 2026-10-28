@@ -265,13 +265,14 @@ namespace TILER2 {
                     x => x.MatchLdarg(2),
                     //x => x.MatchLdfld(out var displayClassField) && displayClassField.Name == "itemDef",
                     x => x.MatchLdfld<ItemDef>("canRemove"));
-				c.Emit(OpCodes.Ldarg_1);
-				c.Emit(OpCodes.Ldarg_2);//yk on second though i kinda get why this was done. this is a lot simpler :P
-				c.EmitDelegate<Func<bool, Interactor, ItemDef, bool>>((origDoContinue, iac, def) => {
+				c.Emit(OpCodes.Ldarg_2);
+				c.Emit(OpCodes.Ldarg_3);//yk on second though i kinda get why this was done. this is a lot simpler :P
+				c.EmitDelegate<Func<bool, ItemDef, Inventory, bool>>((origDoContinue, itemdef, inventoryofplayer) => {
 					var retv = origDoContinue;
 					ignoreFakes++;
-					if(iac.GetComponent<CharacterBody>().inventory.GetItemCountPermanent(def.itemIndex) <= 0) retv = false;
-					ignoreFakes--;
+					if(inventoryofplayer.GetItemCountPermanent(itemdef.itemIndex) <= 0) retv = false;
+					Debug.Log($"FakeInventory: {inventoryofplayer.gameObject.name} has {inventoryofplayer.GetItemCountPermanent(itemdef.itemIndex)} of {itemdef.name}, returning {retv}");
+                    ignoreFakes--;
 					return retv;
 				});
 			});

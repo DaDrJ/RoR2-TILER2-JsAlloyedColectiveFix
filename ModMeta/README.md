@@ -6,7 +6,7 @@
 
 ## Reporting Bugs
 
-You'll find me on the Ror2 modding discord as @wichisfun or just Blåhaj, feel free to ping or dm me about bugs, ill try my best to fix 'em.
+You'll find me on the Ror2 modding discord as @wichisfun or just Blahaj, feel free to ping or dm me about bugs, ill try my best to fix 'em.
 
 ## Description
 
