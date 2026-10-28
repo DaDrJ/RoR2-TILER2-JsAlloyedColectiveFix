@@ -260,7 +260,7 @@ namespace TILER2 {
             var thatfunctionthatihate = typeof(RoR2.PickupPickerController).GetMethod("<GetGeneratedOptionsFromInteractor>g__IsItemValidAsAnOption|84_0", BindingFlags.NonPublic | BindingFlags.Instance);//if someonne gets why the name of this function is so weird, please lmk cause wtf is this suposed to even be. I feel like this is a crude fix at best 
             var manip = new ILContext.Manipulator((il) => {
                 var c = new ILCursor(il);
-				Debug.Log(il);
+				//Debug.Log(il);
 				c.GotoNext(MoveType.After,
                     x => x.MatchLdarg(2),
                     //x => x.MatchLdfld(out var displayClassField) && displayClassField.Name == "itemDef",
@@ -271,7 +271,7 @@ namespace TILER2 {
 					var retv = origDoContinue;
 					ignoreFakes++;
 					if(inventoryofplayer.GetItemCountPermanent(itemdef.itemIndex) <= 0) retv = false;
-					Debug.Log($"FakeInventory: {inventoryofplayer.gameObject.name} has {inventoryofplayer.GetItemCountPermanent(itemdef.itemIndex)} of {itemdef.name}, returning {retv}");
+					//Debug.Log($"FakeInventory: {inventoryofplayer.gameObject.name} has {inventoryofplayer.GetItemCountPermanent(itemdef.itemIndex)} of {itemdef.name}, returning {retv}");
                     ignoreFakes--;
 					return retv;
 				});
